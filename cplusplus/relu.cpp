@@ -30,25 +30,25 @@ int main() {
     guardar(archivoSalida1,predictions1_3);
 
     PerceptronMultilayer nn2(10,2,4,1,"relu");
-    nn.train(x_train,y_train,0.0001,1000);
+    nn2.train(x_train,y_train,0.0001,1000);
     vector<vector<double>> predictions2_4= nn2.predict(x_test);
     const char* archivoSalida2 = "../output_relu/predictions2_4.txt";
     guardar(archivoSalida2,predictions2_4);
 
     PerceptronMultilayer nn3(10,3,6,1,"relu");
-    nn.train(x_train,y_train,0.0001,1000);
+    nn3.train(x_train,y_train,0.0001,1000);
     vector<vector<double>> predictions3_6= nn3.predict(x_test);
     const char* archivoSalida3 = "../output_relu/predictions3_6.txt";
     guardar(archivoSalida3,predictions3_6);
 
     PerceptronMultilayer nn4(10,4,6,1,"relu");
-    nn.train(x_train,y_train,0.0001,1000);
+    nn4.train(x_train,y_train,0.0001,1000);
     vector<vector<double>> predictions4_6= nn4.predict(x_test);
     const char* archivoSalida4 = "../output_relu/predictions4_6.txt";
     guardar(archivoSalida4,predictions4_6);
 
     PerceptronMultilayer nn5(10,10,8,1,"relu");
-    nn.train(x_train,y_train,0.0001,1000);
+    nn5.train(x_train,y_train,0.0001,1000);
     vector<vector<double>> predictions10_8= nn5.predict(x_test);
     const char* archivoSalida5 = "../output_relu/predictions10_8.txt";
     guardar(archivoSalida5,predictions10_8);
