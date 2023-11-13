@@ -104,136 +104,134 @@ vector<double> loss_history;
             biases.push_back(layer_biases);
         }
     }
+// Función forward para la propagación hacia adelante
+vector<vector<double>> forward(const vector<double>& input) {
+    vector<vector<double>> activations;
+    activations.push_back(input);
 
-    // Función de entrenamiento
-    void train(vector<vector<double>> X, vector<vector<double>> Y, double learning_rate, int epochs) {
-        for (int epoch = 0; epoch < epochs; epoch++) {
-            double epoch_loss = 0.0;
-            for (int i = 0; i < X.size(); i++) {
-                // Propagación hacia adelante
-                vector<vector<double>> activations;
-                activations.push_back(X[i]);
-                for (int j = 0; j < num_hidden_layers + 1; j++) {
-                    vector<double> layer_activations;
-                    if (j == num_hidden_layers) {
-                        layer_activations.resize(num_output_neurons);
-                    } else {
-                        layer_activations.resize(num_neurons_per_layer);
-                    }
-                    for (int k = 0; k < layer_activations.size(); k++) {
-                        double z = biases[j][k];
-                        for (int l = 0; l < activations[j].size(); l++) {
-                            z += activations[j][l] * weights[j][l][k];
-                        }
-                        if (activation_function == "sigmoid") {
-                            layer_activations[k] = sigmoid(z);
-                        } else if (activation_function == "tanh") {
-                            layer_activations[k] = tanh_activation(z);
-                        } else if (activation_function == "relu") {
-                            layer_activations[k] = relu(z);
-                        }
-                    }
-                    activations.push_back(layer_activations);
-                }
-
-                // Cálculo del error
-                vector<double> error;
-                for (int j = 0; j < Y[i].size(); j++) {
-                    error.push_back(Y[i][j] - activations[num_hidden_layers + 1][j]);
-                }
-
-                // Propagación hacia atrás
-                vector<vector<double>> deltas;
-                deltas.push_back(error);
-                for (int j = num_hidden_layers; j >= 0; j--) {
-                    vector<double> layer_deltas;
-                    if (j == num_hidden_layers) {
-                        layer_deltas.resize(num_output_neurons);
-                    } else {
-                        layer_deltas.resize(num_neurons_per_layer);
-                    }
-                    for (int k = 0; k < layer_deltas.size(); k++) {
-                        double delta = 0.0;
-                        if (j == num_hidden_layers) {
-                            for (int l = 0; l < deltas[0].size(); l++) {
-                                delta += deltas[0][l] * weights[j][l][k];
-                            }
-                        } else {
-                            for (int l = 0; l < deltas[0].size(); l++) {
-                                delta += deltas[0][l] * weights[j][l][k];
-                            }
-                        }
-                        if (activation_function == "sigmoid") {
-                            layer_deltas[k] = delta * activations[j + 1][k] * (1.0 - activations[j + 1][k]);
-                        } else if (activation_function == "tanh") {
-                            layer_deltas[k] = delta * (1.0 - pow(activations[j + 1][k], 2));
-                        } else if (activation_function == "relu") {
-                            if (activations[j + 1][k] > 0.0) {
-                                layer_deltas[k] = delta;
-                            } else {
-                                layer_deltas[k] = 0.0;
-                            }
-                        }
-                    }
-                    deltas.insert(deltas.begin(), layer_deltas);
-                }
-
-                // Actualización de los pesos sinápticos y los sesgos
-                for (int j = 0; j < num_hidden_layers + 1; j++) {
-                    for (int k = 0; k < biases[j].size(); k++) {
-                        biases[j][k] += learning_rate * deltas[j][k];
-                    }
-                    for (int k = 0; k < weights[j].size(); k++) {
-                        for (int l = 0; l < weights[j][k].size(); l++) {
-                            weights[j][k][l] += learning_rate * activations[j][k] * deltas[j + 1][l];
-                        }
-                    }
-                }
-
-                // Calcular la pérdida y agregarla al historial
-                epoch_loss += softmax_cross_entropy_loss(activations[num_hidden_layers + 1], Y[i]);
-            }
-
-            // Calcular la pérdida promedio para esta época y agregarla al historial
-            epoch_loss /= X.size();
-            loss_history.push_back(epoch_loss);
+    for (int j = 0; j < num_hidden_layers + 1; j++) {
+        vector<double> layer_activations;
+        if (j == num_hidden_layers) {
+            layer_activations.resize(num_output_neurons);
+        } else {
+            layer_activations.resize(num_neurons_per_layer);
         }
+        for (int k = 0; k < layer_activations.size(); k++) {
+            double z = biases[j][k];
+            for (int l = 0; l < activations[j].size(); l++) {
+                z += activations[j][l] * weights[j][l][k];
+            }
+            if (activation_function == "sigmoid") {
+                layer_activations[k] = sigmoid(z);
+            } else if (activation_function == "tanh") {
+                layer_activations[k] = tanh_activation(z);
+            } else if (activation_function == "relu") {
+                layer_activations[k] = relu(z);
+            }
+        }
+        activations.push_back(layer_activations);
     }
 
-    vector<vector<double>> predict(vector<vector<double>> X) {
-    vector<vector<double>> predictions;
-    for (int i = 0; i < X.size(); i++) {
-        // Propagación hacia adelante para cada ejemplo de entrada
-        vector<vector<double>> activations;
-        activations.push_back(X[i]);
-        for (int j = 0; j < num_hidden_layers + 1; j++) {
-            vector<double> layer_activations;
+    return activations;
+}
+
+// Función backward para la propagación hacia atrás
+void backward(const vector<double>& X, const vector<double>& Y, double learning_rate) {
+    // Propagación hacia adelante
+    vector<vector<double>> activations = forward(X);
+
+    // Cálculo del error
+    vector<double> error;
+    for (int j = 0; j < Y.size(); j++) {
+        error.push_back(Y[j] - activations[num_hidden_layers + 1][j]);
+    }
+
+    // Propagación hacia atrás
+    vector<vector<double>> deltas;
+    deltas.push_back(error);
+    for (int j = num_hidden_layers; j >= 0; j--) {
+        vector<double> layer_deltas;
+        if (j == num_hidden_layers) {
+            layer_deltas.resize(num_output_neurons);
+        } else {
+            layer_deltas.resize(num_neurons_per_layer);
+        }
+        for (int k = 0; k < layer_deltas.size(); k++) {
+            double delta = 0.0;
             if (j == num_hidden_layers) {
-                layer_activations.resize(num_output_neurons);
+                for (int l = 0; l < deltas[0].size(); l++) {
+                    delta += deltas[0][l] * weights[j][l][k];
+                }
             } else {
-                layer_activations.resize(num_neurons_per_layer);
-            }
-            for (int k = 0; k < layer_activations.size(); k++) {
-                double z = biases[j][k];
-                for (int l = 0; l < activations[j].size(); l++) {
-                    z += activations[j][l] * weights[j][l][k];
-                }
-                if (activation_function == "sigmoid") {
-                    layer_activations[k] = sigmoid(z);
-                } else if (activation_function == "tanh") {
-                    layer_activations[k] = tanh_activation(z);
-                } else if (activation_function == "relu") {
-                    layer_activations[k] = relu(z);
+                for (int l = 0; l < deltas[0].size(); l++) {
+                    delta += deltas[0][l] * weights[j][l][k];
                 }
             }
-            activations.push_back(layer_activations);
+            if (activation_function == "sigmoid") {
+                layer_deltas[k] = delta * activations[j + 1][k] * (1.0 - activations[j + 1][k]);
+            } else if (activation_function == "tanh") {
+                layer_deltas[k] = delta * (1.0 - pow(activations[j + 1][k], 2));
+            } else if (activation_function == "relu") {
+                if (activations[j + 1][k] > 0.0) {
+                    layer_deltas[k] = delta;
+                } else {
+                    layer_deltas[k] = 0.0;
+                }
+            }
         }
-        for (int j = 0; j < activations[num_hidden_layers + 1].size(); j++) {
-            activations[num_hidden_layers + 1][j] = (activations[num_hidden_layers + 1][j] > 0.5) ? 1.0 : 0.0;
+        deltas.insert(deltas.begin(), layer_deltas);
+    }
+
+    // Actualización de los pesos sinápticos y los sesgos
+    for (int j = 0; j < num_hidden_layers + 1; j++) {
+        for (int k = 0; k < biases[j].size(); k++) {
+            biases[j][k] += learning_rate * deltas[j][k];
+        }
+        for (int k = 0; k < weights[j].size(); k++) {
+            for (int l = 0; l < weights[j][k].size(); l++) {
+                weights[j][k][l] += learning_rate * activations[j][k] * deltas[j + 1][l];
+            }
+        }
+    }
+}
+
+// Función de entrenamiento
+void train(const vector<vector<double>>& X, const vector<vector<double>>& Y, double learning_rate, int epochs) {
+    for (int epoch = 0; epoch < epochs; epoch++) {
+        double epoch_loss = 0.0;
+        for (int i = 0; i < X.size(); i++) {
+            // Propagación hacia adelante y hacia atrás
+            backward(X[i], Y[i], learning_rate);
+
+            // Calcular la pérdida y agregarla al historial
+            vector<vector<double>> predictions = forward(X[i]);
+            epoch_loss += softmax_cross_entropy_loss(predictions[num_hidden_layers + 1], Y[i]);
         }
 
-        predictions.push_back(activations[num_hidden_layers + 1]);
+        // Calcular la pérdida promedio para esta época y agregarla al historial
+        epoch_loss /= X.size();
+        loss_history.push_back(epoch_loss);
+        cout << "Epoch " << epoch + 1 << ", Loss: " << epoch_loss << endl;
     }
+}
+
+
+    vector<vector<double>> predict(const vector<vector<double>>& X) {
+    vector<vector<double>> predictions;
+
+    for (const auto& input : X) {
+        // Obtener las activaciones usando la propagación hacia adelante
+        vector<vector<double>> activations = forward(input);
+
+        // Convertir las activaciones de la capa de salida en predicciones binarias
+        vector<double> prediction;
+        for (int j = 0; j < activations.back().size(); j++) {
+            prediction.push_back((activations.back()[j] > 0.5) ? 1.0 : 0.0);
+        }
+
+        predictions.push_back(prediction);
+    }
+
     return predictions;
 }
 
